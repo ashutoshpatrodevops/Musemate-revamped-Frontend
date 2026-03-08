@@ -244,6 +244,11 @@ export const endpoints = {
     delete: '/upload/image',
   },
 
+  // Chat
+  chat: {
+    message: '/chat/message',
+  },
+
   // Admin
   admin: {
     users: '/users/admin/all',

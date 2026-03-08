@@ -4,34 +4,66 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { museumAdminApi } from '@/lib/museum-admin';
 import { Museum, Review } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-// import { Label } from 'recharts';
-import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Star, MessageSquare, Filter, AlertCircle, Send, ThumbsUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  Star, MessageSquare, Send, ThumbsUp,
+  AlertCircle, TrendingUp, CheckCircle2,
+  Loader2, Building2,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+
+/* ── Star renderer ── */
+function Stars({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'lg' }) {
+  const sz = size === 'lg' ? 'h-5 w-5' : 'h-3.5 w-3.5';
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map(s => (
+        <Star key={s} className={`${sz} ${s <= rating ? 'fill-amber-400 text-amber-400' : 'text-border'}`} />
+      ))}
+    </div>
+  );
+}
+
+/* ── Stat card ── */
+function StatCard({ icon: Icon, label, value, sub, color, delay }: {
+  icon: React.ElementType; label: string; value: string | number;
+  sub?: string; color: string; delay: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
+      className="relative group rounded-2xl border border-border/40 bg-background/60 backdrop-blur-sm p-5 overflow-hidden hover:border-border/70 transition-all"
+    >
+      <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-15 group-hover:opacity-30 transition-opacity ${color}`} />
+      <div className="flex items-start justify-between mb-3">
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${color} bg-opacity-10`}>
+          <Icon className="w-4 h-4 text-foreground/70" />
+        </div>
+        <TrendingUp className="w-3.5 h-3.5 text-muted-foreground/30" />
+      </div>
+      <p className="text-2xl font-bold tracking-tight">{value}</p>
+      <p className="text-xs text-muted-foreground mt-0.5 font-medium">{label}</p>
+      {sub && <p className="text-[10px] text-muted-foreground/60 mt-0.5">{sub}</p>}
+    </motion.div>
+  );
+}
+
+const getMuseumName = (m: any) => typeof m === 'object' ? m.title : 'Unknown';
+const getAuthorName = (a: any) => typeof a === 'object' ? a.username : 'Anonymous';
 
 export default function ReviewsPage() {
   const { getToken } = useAuth();
@@ -40,61 +72,32 @@ export default function ReviewsPage() {
   const [filteredReviews, setFilteredReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Filters
-  const [museumFilter, setMuseumFilter] = useState<string>('all');
-  const [ratingFilter, setRatingFilter] = useState<string>('all');
-  
-  // Response dialog
+  const [museumFilter, setMuseumFilter] = useState('all');
+  const [ratingFilter, setRatingFilter] = useState('all');
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [responseText, setResponseText] = useState('');
   const [responding, setResponding] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    filterReviews();
-  }, [museumFilter, ratingFilter, allReviews]);
+  useEffect(() => { loadData(); }, []);
+  useEffect(() => { filterReviews(); }, [museumFilter, ratingFilter, allReviews]);
 
   const loadData = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
+      setLoading(true); setError(null);
       const token = await getToken();
-      if (!token) {
-        setError('Authentication required');
-        return;
-      }
+      if (!token) { setError('Authentication required'); return; }
 
-      // Load museums
       const museumsRes = await museumAdminApi.getMyMuseums(token);
-      if (!museumsRes.success || !museumsRes.data) {
-        setError('Failed to load museums');
-        return;
-      }
-
+      if (!museumsRes.success || !museumsRes.data) { setError('Failed to load museums'); return; }
       const museumsData = museumsRes.data.data || [];
       setMuseums(museumsData);
 
-      // Load reviews for all museums
-      const reviewsPromises = museumsData.map((museum) =>
-        museumAdminApi.getMuseumReviews(museum._id, token)
+      const results = await Promise.all(
+        museumsData.map(m => museumAdminApi.getMuseumReviews(m._id, token))
       );
-
-      const reviewsResults = await Promise.all(reviewsPromises);
-
-      // Combine all reviews
-      const allReviewsData = reviewsResults.flatMap((result) =>
-        result.success && result.data ? result.data : []
-      );
-
-      setAllReviews(allReviewsData);
-      setFilteredReviews(allReviewsData);
+      const all = results.flatMap(r => r.success && r.data ? r.data : []);
+      setAllReviews(all); setFilteredReviews(all);
     } catch (err: any) {
-      console.error('Error loading reviews:', err);
       setError(err.message || 'Failed to load reviews');
     } finally {
       setLoading(false);
@@ -102,378 +105,314 @@ export default function ReviewsPage() {
   };
 
   const filterReviews = () => {
-    let filtered = [...allReviews];
-
-    // Filter by museum
-    if (museumFilter !== 'all') {
-      filtered = filtered.filter(
-        (review) =>
-          (typeof review.museum === 'object'
-            ? review.museum._id
-            : review.museum) === museumFilter
-      );
-    }
-
-    // Filter by rating
-    if (ratingFilter !== 'all') {
-      filtered = filtered.filter(
-        (review) => review.rating === parseInt(ratingFilter)
-      );
-    }
-
-    setFilteredReviews(filtered);
+    let f = [...allReviews];
+    if (museumFilter !== 'all') f = f.filter(r =>
+      (typeof r.museum === 'object' ? r.museum._id : r.museum) === museumFilter
+    );
+    if (ratingFilter !== 'all') f = f.filter(r => r.rating === parseInt(ratingFilter));
+    setFilteredReviews(f);
   };
 
-  const handleRespondToReview = async () => {
-    if (!selectedReview || !responseText.trim()) {
-      toast.error('Please enter a response');
-      return;
-    }
-
+  const handleRespond = async () => {
+    if (!selectedReview || !responseText.trim()) { toast.error('Please enter a response'); return; }
     try {
       setResponding(true);
-
       const token = await getToken();
-      if (!token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await museumAdminApi.respondToReview(
-        selectedReview._id,
-        responseText,
-        token
-      );
-
-      if (response.success) {
-        toast.success('Response posted successfully');
-        setSelectedReview(null);
-        setResponseText('');
-        loadData(); // Reload reviews
+      if (!token) { toast.error('Authentication required'); return; }
+      const res = await museumAdminApi.respondToReview(selectedReview._id, responseText, token);
+      if (res.success) {
+        toast.success('Response posted!');
+        setSelectedReview(null); setResponseText('');
+        loadData();
       } else {
-        toast.error(response.message || 'Failed to post response');
+        toast.error(res.message || 'Failed to post response');
       }
     } catch (err: any) {
-      console.error('Error responding to review:', err);
       toast.error(err.message || 'Failed to post response');
     } finally {
       setResponding(false);
     }
   };
 
-  const getMuseumName = (museum: any) => {
-    return typeof museum === 'object' ? museum.title : 'Unknown Museum';
-  };
-
-  const getAuthorName = (author: any) => {
-    return typeof author === 'object' ? author.username : 'Anonymous';
-  };
-
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`h-4 w-4 ${
-              star <= rating
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-300'
-            }`}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-12 w-[300px]" />
-        <Skeleton className="h-[600px]" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  // Calculate stats
   const stats = {
     total: allReviews.length,
-    averageRating: allReviews.length > 0
-      ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length).toFixed(1)
-      : '0.0',
-    responded: allReviews.filter((r) => r.response).length,
-    verified: allReviews.filter((r) => r.isVerifiedVisit).length,
+    avg: allReviews.length > 0
+      ? (allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length).toFixed(1) : '0.0',
+    responded: allReviews.filter(r => r.response).length,
+    verified: allReviews.filter(r => r.isVerifiedVisit).length,
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Reviews</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage reviews across all your museums
-        </p>
+  /* ── Loading ── */
+  if (loading) return (
+    <div className="space-y-6 p-6">
+      <Skeleton className="h-10 w-48 rounded-xl" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
       </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reviews</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-            <Star className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.averageRating}</div>
-            <p className="text-xs text-muted-foreground mt-1">out of 5.0</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Responded</CardTitle>
-            <Send className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.responded}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.total > 0 ? Math.round((stats.responded / stats.total) * 100) : 0}% response rate
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Verified Visits</CardTitle>
-            <ThumbsUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.verified}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Select value={museumFilter} onValueChange={setMuseumFilter}>
-              <SelectTrigger className="w-full sm:w-[250px]">
-                <SelectValue placeholder="Filter by museum" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Museums</SelectItem>
-                {museums.map((museum) => (
-                  <SelectItem key={museum._id} value={museum._id}>
-                    {museum.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={ratingFilter} onValueChange={setRatingFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by rating" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Ratings</SelectItem>
-                <SelectItem value="5">5 Stars</SelectItem>
-                <SelectItem value="4">4 Stars</SelectItem>
-                <SelectItem value="3">3 Stars</SelectItem>
-                <SelectItem value="2">2 Stars</SelectItem>
-                <SelectItem value="1">1 Star</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Reviews List */}
       <div className="space-y-4">
-        {filteredReviews.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              No reviews found
-            </CardContent>
-          </Card>
-        ) : (
-          filteredReviews.map((review) => (
-            <Card key={review._id}>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      <Avatar>
-                        <AvatarFallback>
-                          {getAuthorName(review.author).charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{getAuthorName(review.author)}</h4>
-                          {review.isVerifiedVisit && (
-                            <Badge variant="outline" className="text-xs bg-green-50">
-                              Verified Visit
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {getMuseumName(review.museum)}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {format(new Date(review.createdAt), 'MMM dd, yyyy')}
-                        </p>
-                      </div>
-                    </div>
-                    {renderStars(review.rating)}
-                  </div>
+        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+      </div>
+    </div>
+  );
 
-                  {/* Review Title & Content */}
-                  {review.title && (
-                    <h3 className="font-semibold text-lg">{review.title}</h3>
-                  )}
-                  <p className="text-sm">{review.comment}</p>
+  /* ── Error ── */
+  if (error) return (
+    <div className="m-6 flex items-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-5 py-4 text-destructive text-sm">
+      <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+    </div>
+  );
 
-                  {/* Pros & Cons */}
-                  {(review.pros && review.pros.length > 0 || review.cons && review.cons.length > 0) && (
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      {review.pros && review.pros.length > 0 && (
-                        <div>
-                          <h5 className="font-semibold text-green-600 mb-2">Pros:</h5>
-                          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                            {review.pros.map((pro, i) => (
-                              <li key={i}>{pro}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {review.cons && review.cons.length > 0 && (
-                        <div>
-                          <h5 className="font-semibold text-red-600 mb-2">Cons:</h5>
-                          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                            {review.cons.map((con, i) => (
-                              <li key={i}>{con}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
+  return (
+    <div className="p-4 md:p-6 space-y-6">
 
-                  {/* Helpful Count */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <ThumbsUp className="h-4 w-4" />
-                      {review.helpfulCount} found this helpful
-                    </span>
-                  </div>
+      {/* ── Title ── */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h1 className="text-2xl font-bold tracking-tight">Reviews</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage reviews across all your museums</p>
+      </motion.div>
 
-                  {/* Admin Response */}
-                  {review.response ? (
-                    <div className="bg-muted p-4 rounded-lg space-y-2">
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={MessageSquare} label="Total Reviews"   value={stats.total}     color="bg-violet-500"  delay={0.05} />
+        <StatCard icon={Star}          label="Average Rating"  value={`${stats.avg}★`} color="bg-amber-500"   delay={0.10}
+          sub="out of 5.0" />
+        <StatCard icon={Send}          label="Responded"       value={stats.responded}
+          sub={`${stats.total > 0 ? Math.round((stats.responded / stats.total) * 100) : 0}% rate`}
+          color="bg-blue-500" delay={0.15} />
+        <StatCard icon={CheckCircle2}  label="Verified Visits" value={stats.verified}  color="bg-emerald-500" delay={0.20} />
+      </div>
+
+      {/* ── Filters ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="flex flex-col sm:flex-row gap-3 p-4 rounded-2xl border border-border/40 bg-background/60 backdrop-blur-sm"
+      >
+        <Select value={museumFilter} onValueChange={setMuseumFilter}>
+          <SelectTrigger className="h-9 w-full sm:w-[220px] rounded-xl border-border/50 text-sm">
+            <SelectValue placeholder="All Museums" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Museums</SelectItem>
+            {museums.map(m => <SelectItem key={m._id} value={m._id}>{m.title}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select value={ratingFilter} onValueChange={setRatingFilter}>
+          <SelectTrigger className="h-9 w-full sm:w-[160px] rounded-xl border-border/50 text-sm">
+            <SelectValue placeholder="All Ratings" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Ratings</SelectItem>
+            {[5,4,3,2,1].map(n => (
+              <SelectItem key={n} value={String(n)}>
+                {'★'.repeat(n)}{'☆'.repeat(5-n)} {n} Star{n !== 1 ? 's' : ''}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <span className="sm:ml-auto text-xs text-muted-foreground self-center">
+          {filteredReviews.length} review{filteredReviews.length !== 1 ? 's' : ''}
+        </span>
+      </motion.div>
+
+      {/* ── Reviews list ── */}
+      {filteredReviews.length === 0 ? (
+        <div className="flex flex-col items-center py-20 text-muted-foreground gap-3 rounded-2xl border border-dashed border-border/50">
+          <MessageSquare className="w-8 h-8 opacity-30" />
+          <p className="text-sm">No reviews found</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredReviews.map((review, i) => (
+            <motion.div
+              key={review._id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: i * 0.04 }}
+              className="rounded-2xl border border-border/40 bg-background/60 backdrop-blur-sm overflow-hidden hover:border-border/70 transition-all"
+            >
+              {/* Rating accent bar */}
+              <div
+                className="h-0.5 w-full"
+                style={{
+                  background: review.rating >= 4
+                    ? 'linear-gradient(90deg, #10b981, transparent)'
+                    : review.rating === 3
+                    ? 'linear-gradient(90deg, #f59e0b, transparent)'
+                    : 'linear-gradient(90deg, #f43f5e, transparent)',
+                }}
+              />
+
+              <div className="p-5 space-y-4">
+                {/* Author row */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-9 h-9 rounded-xl ring-1 ring-border/40">
+                      <AvatarFallback className="rounded-xl bg-primary/10 text-primary text-xs font-bold">
+                        {getAuthorName(review.author).charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
                       <div className="flex items-center gap-2">
-                        <Badge>Museum Response</Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(review.response.respondedAt), 'MMM dd, yyyy')}
+                        <p className="text-sm font-semibold leading-tight">{getAuthorName(review.author)}</p>
+                        {review.isVerifiedVisit && (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                            <CheckCircle2 className="w-2.5 h-2.5" /> Verified
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Building2 className="w-3 h-3" />
+                          {getMuseumName(review.museum)}
+                        </span>
+                        <span className="text-muted-foreground/40">·</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {format(new Date(review.createdAt), 'MMM dd, yyyy')}
                         </span>
                       </div>
-                      <p className="text-sm">{review.response.comment}</p>
                     </div>
+                  </div>
+                  <Stars rating={review.rating} />
+                </div>
+
+                {/* Content */}
+                {review.title && (
+                  <p className="font-semibold text-sm">{review.title}</p>
+                )}
+                <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>
+
+                {/* Pros & Cons */}
+                {((review.pros?.length ?? 0) > 0 || (review.cons?.length ?? 0) > 0) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {review.pros && review.pros.length > 0 && (
+                      <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-2">Pros</p>
+                        <ul className="space-y-1">
+                          {review.pros.map((p, i) => (
+                            <li key={i} className="text-xs text-muted-foreground flex gap-1.5">
+                              <span className="text-emerald-500 mt-0.5">+</span>{p}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {review.cons && review.cons.length > 0 && (
+                      <div className="p-3 rounded-xl bg-rose-500/5 border border-rose-500/15">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600 mb-2">Cons</p>
+                        <ul className="space-y-1">
+                          {review.cons.map((c, i) => (
+                            <li key={i} className="text-xs text-muted-foreground flex gap-1.5">
+                              <span className="text-rose-500 mt-0.5">−</span>{c}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Helpful */}
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <ThumbsUp className="h-3 w-3" />
+                    {review.helpfulCount} found helpful
+                  </span>
+
+                  {/* Admin response or respond button */}
+                  {review.response ? (
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-primary/60">
+                      ✓ Responded
+                    </span>
                   ) : (
-                    <div className="flex justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedReview(review)}
-                      >
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Respond
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedReview(review)}
+                      className="h-7 rounded-xl text-xs gap-1.5 border-border/50 hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                    >
+                      <MessageSquare className="w-3 h-3" /> Respond
+                    </Button>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
 
-      {/* Response Dialog */}
-      <Dialog open={!!selectedReview} onOpenChange={() => setSelectedReview(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Respond to Review</DialogTitle>
-            <DialogDescription>
-              Write a professional response to this review
-            </DialogDescription>
+                {/* Existing response */}
+                {review.response && (
+                  <div className="ml-4 pl-4 border-l-2 border-primary/20">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Museum Response</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {format(new Date(review.response.respondedAt), 'MMM dd, yyyy')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{review.response.comment}</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Response Dialog ── */}
+      <Dialog open={!!selectedReview} onOpenChange={() => { setSelectedReview(null); setResponseText(''); }}>
+        <DialogContent className="max-w-md rounded-2xl border-border/40 bg-background/90 backdrop-blur-xl">
+          <DialogHeader className="pb-1">
+            <DialogTitle className="text-base font-bold">Respond to Review</DialogTitle>
           </DialogHeader>
 
           {selectedReview && (
             <div className="space-y-4">
-              {/* Review Preview */}
-              <div className="bg-muted p-4 rounded-lg space-y-2">
+              {/* Preview */}
+              <div className="p-4 rounded-xl border border-border/30 bg-muted/20 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold">
-                    {getAuthorName(selectedReview.author)}
-                  </span>
-                  {renderStars(selectedReview.rating)}
+                  <p className="text-sm font-semibold">{getAuthorName(selectedReview.author)}</p>
+                  <Stars rating={selectedReview.rating} />
                 </div>
-                <p className="text-sm">{selectedReview.comment}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                  {selectedReview.comment}
+                </p>
               </div>
 
-              {/* Response Input */}
-              <div className="space-y-2">
-                <Label>Your Response</Label>
+              {/* Input */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Your Response
+                </label>
                 <Textarea
-                  placeholder="Thank you for your feedback..."
+                  placeholder="Thank you for your feedback…"
                   value={responseText}
-                  onChange={(e) => setResponseText(e.target.value)}
-                  rows={5}
+                  onChange={e => setResponseText(e.target.value)}
+                  rows={4}
+                  className="rounded-xl border-border/50 bg-background/80 text-sm resize-none focus:border-primary/40"
                 />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 justify-end pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setSelectedReview(null); setResponseText(''); }}
+                  className="h-9 rounded-xl text-xs border-border/50"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleRespond}
+                  disabled={responding || !responseText.trim()}
+                  className="h-9 rounded-xl text-xs gap-1.5"
+                >
+                  {responding
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Posting…</>
+                    : <><Send className="w-3.5 h-3.5" /> Post Response</>}
+                </Button>
               </div>
             </div>
           )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSelectedReview(null);
-                setResponseText('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleRespondToReview} disabled={responding}>
-              {responding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Post Response
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

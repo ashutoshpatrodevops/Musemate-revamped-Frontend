@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
+import { DashboardMobileSidebar } from '@/components/dashboard/DashboardMobileSidebar';
 import { API_URL } from '@/lib/constants';
 
 export default async function DashboardLayout({
@@ -52,6 +53,8 @@ export default async function DashboardLayout({
       <div className="flex-1 p-4 sm:p-6 md:ml-64">
         {children}
       </div>
+      <DashboardMobileSidebar />
+
     </div>
   );
 }

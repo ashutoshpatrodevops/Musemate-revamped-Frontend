@@ -7,34 +7,95 @@ import { TypingIndicator } from './TypingIndicator';
 import { Message } from './types';
 import { ChatHeader } from './ChatHeader';
 import { WelcomeScreen } from './WelcomeScreen';
+import { api, endpoints } from '@/lib/api';
+
+type ChatIntent = 'museum_qa' | 'platform_faq' | 'booking' | 'general';
+
+interface ChatSource {
+  title: string;
+  url?: string;
+  type: 'museum' | 'platform' | 'booking';
+}
+
+interface ChatResponse {
+  intent: ChatIntent;
+  reply: string;
+  sources: ChatSource[];
+  suggestions: string[];
+}
+
+function formatAssistantReply(payload: ChatResponse): string {
+  const sections: string[] = [payload.reply];
+
+  if (payload.sources.length) {
+    const sourceLines = payload.sources
+      .slice(0, 3)
+      .map((source) => `- ${source.title}${source.url ? ` (${source.url})` : ''}`)
+      .join('\n');
+
+    sections.push(`Sources:\n${sourceLines}`);
+  }
+
+  if (payload.suggestions.length) {
+    const suggestionLines = payload.suggestions
+      .slice(0, 3)
+      .map((item) => `- ${item}`)
+      .join('\n');
+
+    sections.push(`Try asking:\n${suggestionLines}`);
+  }
+
+  return sections.join('\n\n');
+}
 
 export default function ChatLayout() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [typing, setTyping] = useState(false);
-    function clearChat() {
-  setMessages([]);
-}
+  function clearChat() {
+    setMessages([]);
+  }
 
   async function sendMessage(text: string) {
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: text
+      content: text,
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setTyping(true);
 
-    setTimeout(() => {
+    try {
+      const response = await api.post<ChatResponse>(endpoints.chat.message, {
+        message: text,
+      });
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Could not fetch assistant response');
+      }
+
       const aiMsg: Message = {
-        id: (Date.now()+1).toString(),
+        id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "This is where your AI response will appear. Replace with API."
+        content: formatAssistantReply(response.data),
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, aiMsg]);
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (error) {
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content:
+          'I could not process that just now. Please try again in a moment, or ask a shorter question.',
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
       setTyping(false);
-    }, 900);
+    }
   }
 
   return (

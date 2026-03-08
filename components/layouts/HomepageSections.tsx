@@ -7,6 +7,8 @@ import {
   Building2, Landmark, Globe, CheckCircle2, TrendingUp, Award
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import ScrollReveal from './ScrollReveal';
 
 /* ─────────────────────────────────────────────
    Re-usable animation variants
@@ -25,7 +27,6 @@ const staggerVariants = {
   visible: { transition: { staggerChildren: 0.1 } },
 };
 
-/** Shorthand props for a stagger container */
 const stagger = {
   variants: staggerVariants,
   initial: 'hidden' as const,
@@ -33,7 +34,6 @@ const stagger = {
   viewport: { once: true },
 };
 
-/** Shorthand props for a fade-up child */
 const fadeUp = (delay = 0) => ({
   variants: fadeUpVariants,
   initial: 'hidden' as const,
@@ -41,6 +41,30 @@ const fadeUp = (delay = 0) => ({
   viewport: { once: true },
   custom: delay,
 });
+
+/* ─────────────────────────────────────────────
+   Rotating Word Hook
+───────────────────────────────────────────── */
+function useRotatingWord(words: string[], interval = 2200) {
+  const [index, setIndex] = useState(0);
+  const [animState, setAnimState] = useState<'visible' | 'exit' | 'enter'>('visible');
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAnimState('exit');
+      setTimeout(() => {
+        setIndex((p) => (p + 1) % words.length);
+        setAnimState('enter');
+      }, 300);
+      setTimeout(() => {
+        setAnimState('visible');
+      }, 600);
+    }, interval);
+    return () => clearInterval(timer);
+  }, []);
+
+  return { word: words[index], animState };
+}
 
 /* ─────────────────────────────────────────────
    DATA
@@ -154,13 +178,6 @@ const museums = [
   },
 ];
 
-// const stats = [
-//   { value: '400+', label: 'Museums Listed', icon: Building2 },
-//   { value: '2M+', label: 'Tickets Booked', icon: Ticket },
-//   { value: '28', label: 'States Covered', icon: MapPin },
-//   { value: '4.9★', label: 'Average Rating', icon: Star },
-// ];
-
 const collaboratorPerks = [
   'Real-time visitor analytics dashboard',
   'AI-driven demand forecasting',
@@ -174,11 +191,25 @@ const collaboratorPerks = [
    SECTION COMPONENTS
 ───────────────────────────────────────────── */
 
-/** 1. Stats Bar */
-
-
 /** 2. Features Grid */
 function FeaturesSection() {
+  const WORDS = ['Explorers', 'Curators', 'Dreamers', 'Historians'];
+  const { word, animState } = useRotatingWord(WORDS);
+
+  const wordStyle: React.CSSProperties = {
+    display: 'inline-block',
+    color: '#fff',
+    fontStyle: 'normal',
+    transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease',
+    transform:
+      animState === 'exit'
+        ? 'translateY(-120%) rotateX(20deg)'
+        : animState === 'enter'
+        ? 'translateY(120%) rotateX(-20deg)'
+        : 'translateY(0%) rotateX(0deg)',
+    opacity: animState === 'visible' ? 1 : 0,
+  };
+
   return (
     <section className="relative py-28 overflow-hidden">
       {/* ambient glow */}
@@ -189,10 +220,27 @@ function FeaturesSection() {
           <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-primary mb-4">
             <Sparkles className="w-3.5 h-3.5" /> Everything You Need
           </span>
+
           <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-            Built for Explorers,{' '}
-            <span className="text-primary italic">Curators</span> & Everyone In-Between
+            Built for{' '}
+            {/* ── Rotating pill ── */}
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                backgroundColor: '#5b3ff8',
+                borderRadius: '10px',
+                padding: '0 0.35em',
+                overflow: 'hidden',
+                verticalAlign: 'baseline',
+                perspective: '400px',
+              }}
+            >
+              <span style={wordStyle}>{word}</span>
+            </span>
+            {' '}& Everyone In-Between
           </h2>
+
           <p className="text-muted-foreground text-lg leading-relaxed">
             MuseMate is more than a booking platform — it's a complete cultural ecosystem.
           </p>
@@ -278,6 +326,27 @@ function HowItWorksSection() {
   );
 }
 
+// scroll
+function Home() {
+  return (
+    <main className="p-10 flex flex-col items-center">
+      <div className="h-[100vh] flex items-center justify-center">
+        <h1 className="text-2xl">Scroll down to see the reveal...</h1>
+      </div>
+
+      <ScrollReveal
+        baseOpacity={0}
+        blurStrength={10}
+        textClassName="text-black-500"
+      >
+        MuseMate: Discover amazing museums across India and book your tickets instantly.
+      </ScrollReveal>
+
+      <div className="h-[100vh]" />
+    </main>
+  );
+}
+
 /** 4. Featured Museums */
 function FeaturedMuseumsSection() {
   return (
@@ -348,7 +417,6 @@ function FeaturedMuseumsSection() {
 }
 
 /** 5. Collaborator CTA Banner */
-/** 5. Collaborator CTA Banner */
 function CollaboratorSection() {
   return (
     <section className="relative py-20 overflow-hidden">
@@ -358,10 +426,7 @@ function CollaboratorSection() {
           className="relative rounded-3xl overflow-hidden p-10 md:p-16"
           style={{ background: '#0f0a05' }}
         >
-
           {/* ── Orb layer ── */}
-
-          {/* Giant amber/orange core — top right */}
           <div className="absolute -top-20 -right-20 w-[520px] h-[520px] rounded-full pointer-events-none"
             style={{
               background: 'radial-gradient(circle, #f97316 0%, #ea580c 30%, #9a3412 60%, transparent 80%)',
@@ -369,8 +434,6 @@ function CollaboratorSection() {
               opacity: 0.8,
             }}
           />
-
-          {/* Warm yellow accent — right edge mid */}
           <div className="absolute top-1/2 -right-8 -translate-y-1/2 w-[260px] h-[260px] rounded-full pointer-events-none"
             style={{
               background: 'radial-gradient(circle, #fbbf24 0%, #f59e0b 40%, transparent 75%)',
@@ -378,8 +441,6 @@ function CollaboratorSection() {
               opacity: 0.55,
             }}
           />
-
-          {/* Deep red depth blob — center right */}
           <div className="absolute -top-10 right-[18%] w-[340px] h-[340px] rounded-full pointer-events-none"
             style={{
               background: 'radial-gradient(circle, #dc2626 0%, #991b1b 50%, transparent 80%)',
@@ -387,8 +448,6 @@ function CollaboratorSection() {
               opacity: 0.45,
             }}
           />
-
-          {/* Subtle ember wash — bottom right */}
           <div className="absolute -bottom-16 right-[25%] w-[280px] h-[180px] rounded-full pointer-events-none"
             style={{
               background: 'radial-gradient(circle, #fb923c 0%, transparent 70%)',
@@ -396,8 +455,6 @@ function CollaboratorSection() {
               opacity: 0.35,
             }}
           />
-
-          {/* Left-side dark mask so text stays readable */}
           <div className="absolute inset-0 pointer-events-none"
             style={{
               background: 'linear-gradient(105deg, rgba(15,10,5,0.97) 0%, rgba(15,10,5,0.93) 38%, rgba(15,10,5,0.4) 65%, transparent 100%)',
@@ -406,7 +463,6 @@ function CollaboratorSection() {
 
           {/* ── Content ── */}
           <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
-
             {/* Left */}
             <div>
               <motion.div {...fadeUp(0.05)}>
@@ -421,7 +477,6 @@ function CollaboratorSection() {
               >
                 Are You a{' '}
                 <span
-                  
                   style={{
                     background: 'linear-gradient(90deg, #fb923c, #f97316, #fbbf24)',
                     WebkitBackgroundClip: 'text',
@@ -494,7 +549,6 @@ function CollaboratorSection() {
                 </motion.div>
               ))}
             </motion.div>
-
           </div>
         </motion.div>
       </div>
@@ -503,14 +557,28 @@ function CollaboratorSection() {
 }
 
 /* ─────────────────────────────────────────────
-   MASTER EXPORT — drop these sections right
-   after your existing <section> in HomePage
+   MASTER EXPORT
 ───────────────────────────────────────────── */
 export function HomePageSections() {
   return (
     <>
       <FeaturesSection />
       <HowItWorksSection />
+      <section className="py-20 container mx-auto px-4">
+        <ScrollReveal
+          baseOpacity={0}
+          blurStrength={10}
+          wordAnimationEnd="bottom 20%"   // ← wider end = longer scroll distance
+  rotationEnd="bottom 20%"  
+          textClassName="text-foreground"
+        >
+         India's culture, one ticket away. Discover. Book. Explore.
+400 museums. 28 states. One seamless booking experience.
+From ancient artefacts to modern art — every visit starts here.
+Skip the queue. Embrace the culture. MuseMate makes it effortless.
+Your next favourite museum is closer than you think. Find it today.
+        </ScrollReveal>
+      </section>
       <FeaturedMuseumsSection />
       <CollaboratorSection />
     </>

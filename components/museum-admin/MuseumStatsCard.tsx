@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IndianRupee, Calendar, Users, Building2, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { IndianRupee, Calendar, Users, Building2, TrendingUp } from 'lucide-react';
 
 interface StatsCardsProps {
   stats: {
@@ -18,58 +18,63 @@ export function StatsCards({ stats }: StatsCardsProps) {
     {
       title: 'Total Revenue',
       value: `₹${stats.totalRevenue.toLocaleString('en-IN')}`,
-      icon: IndianRupee,
       description: 'Total earnings',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      icon: IndianRupee,
+      glow: 'bg-emerald-500',
     },
     {
       title: 'Total Bookings',
       value: stats.totalBookings.toLocaleString(),
-      icon: Calendar,
       description: 'All time bookings',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      icon: Calendar,
+      glow: 'bg-blue-500',
     },
     {
       title: 'Total Visitors',
       value: stats.totalVisitors.toLocaleString(),
-      icon: Users,
       description: 'Unique visitors',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      icon: Users,
+      glow: 'bg-violet-500',
     },
     {
       title: 'Active Museums',
       value: stats.activeMuseums.toString(),
-      icon: Building2,
       description: 'Currently active',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      icon: Building2,
+      glow: 'bg-amber-500',
     },
   ];
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {cards.map((card) => {
+      {cards.map((card, i) => {
         const Icon = card.icon;
         return (
-          <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {card.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${card.bgColor}`}>
-                <Icon className={`h-4 w-4 ${card.color}`} />
+          <motion.div
+            key={card.title}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+            className="relative group rounded-2xl border border-border/40 bg-background/60 backdrop-blur-sm p-5 overflow-hidden hover:border-border/70 hover:-translate-y-0.5 transition-all duration-300"
+          >
+            {/* Glow blob */}
+            <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-15 group-hover:opacity-30 transition-opacity ${card.glow}`} />
+
+            {/* Top row */}
+            <div className="flex items-start justify-between mb-4 relative">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${card.glow} bg-opacity-10 border border-white/5`}>
+                <Icon className="w-4 h-4 text-foreground/70" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {card.description}
-              </p>
-            </CardContent>
-          </Card>
+              <TrendingUp className="w-3.5 h-3.5 text-muted-foreground/25" />
+            </div>
+
+            {/* Value */}
+            <p className="text-2xl font-bold tracking-tight relative">{card.value}</p>
+
+            {/* Label */}
+            <p className="text-xs text-muted-foreground mt-0.5 font-medium relative">{card.title}</p>
+            <p className="text-[10px] text-muted-foreground/50 mt-0.5 relative">{card.description}</p>
+          </motion.div>
         );
       })}
     </div>
