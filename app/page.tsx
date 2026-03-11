@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Ticket, Search, Calendar, Shield, ArrowRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import NotFound from './not-found';
+import { Lobster_Two } from 'next/font/google';
 // At the top of your HomePage file
 import { CircuitBoard, MousePointerClick, UserCog, Award } from 'lucide-react';
 // Add this import at the top
@@ -20,31 +21,43 @@ export default function HomePage() {
     title: "AI-Powered Curator",
     description: "Get personalized exhibition recommendations based on your historical interests and artistic preferences.",
     icon: <Sparkles className="h-6 w-6" />,
+    color: "from-purple-500 to-pink-500",
+    shadow: "shadow-purple-500/20",
   },
   {
     title: "Secure Payments",
     description: "Book tickets instantly with our encrypted payment gateway supporting UPI, Cards, and Net Banking.",
     icon: <Shield className="h-6 w-6" />,
+    color: "from-blue-500 to-cyan-500",
+    shadow: "shadow-blue-500/20",
   },
   {
     title: "Real-time Dashboards",
     description: "Track your bookings, digital tickets, and visit history through an intuitive, sleek dashboard.",
     icon: <Calendar className="h-6 w-6" />,
+    color: "from-emerald-500 to-teal-500",
+    shadow: "shadow-emerald-500/20",
   },
   {
     title: "Collaborator Program",
     description: "Are you a museum owner? Partner with MuseMate to digitize your ticketing and reach more visitors.",
     icon: <Ticket className="h-6 w-6" />,
+    color: "from-orange-500 to-red-500",
+    shadow: "shadow-orange-500/20",
   },
   {
     title: "Smart Search",
     description: "Find museums near you or explore by era, style, or popularity with our advanced filtering system.",
     icon: <Search className="h-6 w-6" />,
+    color: "from-indigo-500 to-blue-500",
+    shadow: "shadow-indigo-500/20",
   },
   {
     title: "Instant Digital Entry",
     description: "No more queues. Simply scan your QR code at the entrance and step right into the gallery.",
     icon: <ArrowRight className="h-6 w-6" />,
+    color: "from-rose-500 to-orange-500",
+    shadow: "shadow-rose-500/20",
   },
 ];
   return (
@@ -76,7 +89,7 @@ export default function HomePage() {
               <span className="text-primary italic">Museums</span> Across India
             </h1>
             <p className="mt-8 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Skip the lines and dive into history. MuseMate connects you to hundreds of 
+              Skip the lines and dive into history. <span className="lobster-two">MuseMate</span> connects you to hundreds of 
               Museums with seamless instant booking.
             </p>
 
@@ -118,13 +131,15 @@ export default function HomePage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: index * 0.1 }}
-          className="group p-8 rounded-3xl border border-border bg-background/50 backdrop-blur-sm hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300"
+          className={`group relative overflow-hidden p-8 rounded-3xl border border-border bg-background/60 backdrop-blur-sm hover:border-primary/40 hover:shadow-2xl ${feature.shadow} transition-all duration-300`}
         >
-          <div className="mb-6 inline-flex p-3 rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+          <div className={`absolute inset-0 opacity-0 group-hover:opacity-15 bg-gradient-to-br ${feature.color} transition-opacity duration-300`} />
+
+          <div className={`relative mb-6 inline-flex p-3 rounded-2xl bg-gradient-to-br ${feature.color} text-white shadow-lg ${feature.shadow} group-hover:scale-105 transition-all duration-300`}>
             {feature.icon}
           </div>
-          <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-          <p className="text-muted-foreground leading-relaxed">
+          <h3 className="relative text-xl font-semibold mb-3">{feature.title}</h3>
+          <p className="relative text-muted-foreground leading-relaxed">
             {feature.description}
           </p>
         </motion.div>

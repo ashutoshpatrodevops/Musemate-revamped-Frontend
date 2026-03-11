@@ -32,16 +32,7 @@ export default function SignInPage() {
               Sign in to manage bookings, track performance, and continue building memorable visitor experiences.
             </p>
 
-            <div className="grid grid-cols-2 gap-3 pt-2 text-sm">
-              <div className="rounded-xl border border-border/50 bg-background/60 p-3 backdrop-blur">
-                <p className="font-semibold text-foreground">Smooth Access</p>
-                <p className="text-muted-foreground">Continue where you left off</p>
-              </div>
-              <div className="rounded-xl border border-border/50 bg-background/60 p-3 backdrop-blur">
-                <p className="font-semibold text-foreground">Secure Session</p>
-                <p className="text-muted-foreground">Trusted authentication powered by Clerk</p>
-              </div>
-            </div>
+            
           </div>
         </section>
 

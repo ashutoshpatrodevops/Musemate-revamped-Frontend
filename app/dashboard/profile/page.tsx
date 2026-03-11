@@ -3,11 +3,14 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { api, endpoints } from '@/lib/api';
+import type { Booking, Museum, UserStats } from '@/types';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -82,6 +85,7 @@ function FieldRow({
 
 /* ── Main Page ── */
 export default function ProfilePage() {
+  const { getToken } = useAuth();
   const { user, isLoaded } = useUser();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -101,16 +105,46 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    if (isLoaded && user) {
+    const syncProfileAndStats = async () => {
+      if (!isLoaded) return;
+
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       const metadata = user.unsafeMetadata as { phone?: string; address?: string } || {};
       setProfileData({
         username: user.username || user.firstName || '',
         phone: metadata.phone || '',
         address: metadata.address || '',
       });
-      setLoading(false);
-    }
-  }, [isLoaded, user]);
+
+      try {
+        const token = await getToken();
+        if (!token) return;
+
+        const [statsResponse, upcomingResponse, watchlistResponse] = await Promise.all([
+          api.get<UserStats>(endpoints.users.stats, token),
+          api.get<Booking[]>(endpoints.bookings.upcoming, token),
+          api.get<Museum[]>(endpoints.users.watchlist, token),
+        ]);
+
+        setStats({
+          totalBookings: statsResponse.success ? (statsResponse.data?.totalBookings ?? 0) : 0,
+          upcomingVisits: upcomingResponse.success ? upcomingResponse.data?.length ?? 0 : 0,
+          totalReviews: statsResponse.success ? (statsResponse.data?.totalReviews ?? 0) : 0,
+          watchlistCount: watchlistResponse.success ? watchlistResponse.data?.length ?? 0 : 0,
+        });
+      } catch (error) {
+        console.error('Error fetching profile stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    syncProfileAndStats();
+  }, [getToken, isLoaded, user]);
 
   const handleSave = async () => {
     setSaving(true);

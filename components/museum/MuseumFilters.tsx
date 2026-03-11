@@ -20,6 +20,7 @@ export function MuseumFilters() {
   const searchParams = useSearchParams();
 
   const category = searchParams.get('category') || 'all';
+  const isFeatured = searchParams.get('isFeatured') || 'all';
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = searchParams.get('sortOrder') || 'desc';
 
@@ -41,10 +42,14 @@ export function MuseumFilters() {
     router.push('/museums');
   };
 
-  const hasFilters = category !== 'all' || sortBy !== 'createdAt' || sortOrder !== 'desc';
+  const hasFilters =
+    category !== 'all' ||
+    isFeatured !== 'all' ||
+    sortBy !== 'createdAt' ||
+    sortOrder !== 'desc';
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-card">
+    <div className="sticky top-24 self-start space-y-4 rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">Filters</h3>
         {hasFilters && (
@@ -78,6 +83,20 @@ export function MuseumFilters() {
         </Select>
       </div>
 
+      {/* Featured Filter */}
+      <div className="space-y-2">
+        <Label>Features</Label>
+        <Select value={isFeatured} onValueChange={(value) => updateFilter('isFeatured', value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="All Museums" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Museums</SelectItem>
+            <SelectItem value="true">Featured Only</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Sort By */}
       <div className="space-y-2">
         <Label>Sort By</Label>
@@ -88,6 +107,7 @@ export function MuseumFilters() {
           <SelectContent>
             <SelectItem value="createdAt">Newest</SelectItem>
             <SelectItem value="averageRating">Highest Rated</SelectItem>
+            <SelectItem value="totalBookings">Frequency</SelectItem>
             <SelectItem value="title">Name (A-Z)</SelectItem>
           </SelectContent>
         </Select>

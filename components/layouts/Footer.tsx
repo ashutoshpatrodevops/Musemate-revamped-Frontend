@@ -152,6 +152,21 @@ export function Footer() {
           </div>
         </div>
       </div>
+
+      {/* Emerging App Name Watermark */}
+      <div className="relative overflow-hidden h-36 md:h-44 pointer-events-none select-none">
+        <span
+          className={`${lobsterTwo.className} absolute bottom-[-0.08em] left-1/2 -translate-x-1/2 whitespace-nowrap font-bold leading-none tracking-tight`}
+          style={{
+            fontSize: 'clamp(5rem, 13vw, 11rem)',
+            color: 'hsl(var(--foreground) / 0.15)',
+            WebkitTextStroke: '0.6px hsl(var(--foreground) / 0.2)',
+            textShadow: '0 10px 30px hsl(var(--foreground) / 0.08)',
+          }}
+        >
+          {APP_NAME}
+        </span>
+      </div>
     </footer>
   );
 }

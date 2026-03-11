@@ -106,31 +106,35 @@ const timeline = [
 const team = [
   {
     name: 'Ashutosh Patro',
-    role: 'Co-Founder & CEO',
+    role: 'Developement & Operations Lead',
+    photo: '/team/me.jpg',
     bg: 'bg-amber-950',
     initials: 'AP',
-    quote: 'Devops and Backend',
+    quote: 'Building Systems for Mankind',
   },
   {
     name: 'Pidugu Sai Naresh',
-    role: 'Co-Founder & CTO',
+    role: 'UI & Product Management Lead',
+    photo: '/team/sai.jpeg',
     bg: 'bg-sky-950',
     initials: 'PS',
-    quote: 'Technology should feel invisible — just magic, Reasearch and Developement',
+    quote: 'Technology should feel invisible — just magic',
   },
   {
-    name: 'Rohan Das',
-    role: 'Head of Partnerships',
+    name: 'Ankit Kumar Tripathy',
+    role: 'Research & Developement Lead',
+    photo: '/team/ankit.jpeg',
     bg: 'bg-emerald-950',
-    initials: 'RD',
+    initials: 'AP',
     quote: 'We grow only when our museum partners grow.',
   },
   {
-    name: 'Ananya Iyer',
-    role: 'Lead AI Engineer',
+    name: 'Bengali Dada',
+    role: 'Tester',
+    photo: '/team/ghosh.jpeg',
     bg: 'bg-violet-950',
     initials: 'AI',
-    quote: 'The best recommendation feels like serendipity.',
+    quote: 'I love to test others patience level',
   },
 ];
 
@@ -379,42 +383,67 @@ export default function AboutPage() {
       </section>
 
       {/* ── TEAM ─────────────────────────────── */}
-      <section className="py-20 bg-muted/20 border-y border-border/40">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <motion.div {...fadeUp()} className="text-center mb-16">
-            <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-primary mb-3">
-              <Users className="w-3.5 h-3.5" /> The People
-            </span>
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-              Meet the Team Behind <span className="text-primary italic">{APP_NAME}</span>
-            </h2>
-          </motion.div>
+      <section className="py-24 bg-background">
+  <div className="container mx-auto px-4 max-w-6xl">
+    {/* Header Section */}
+    <motion.div {...fadeUp()} className="mb-20">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="h-px w-12 bg-primary/60" />
+        <span className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground">
+          The Core Team
+        </span>
+      </div>
+      <h2 className="text-4xl md:text-6xl font-black tracking-tight">
+        Building the future of <span className="text-primary italic">Culture.</span>
+      </h2>
+    </motion.div>
 
-          <motion.div {...stagger} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {team.map((member) => (
-              <motion.div
-                key={member.name}
-                {...fadeUp(0.05)}
-                className="group rounded-2xl border border-border/50 overflow-hidden hover:border-primary/40 transition-all bg-card"
-              >
-                <div className={`${member.bg} h-40 flex items-center justify-center relative`}>
-                  <span className="text-5xl font-black text-white/20">{member.initials}</span>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                </div>
-                <div className="p-5">
-                  <h3 className="font-extrabold text-lg">{member.name}</h3>
-                  <p className="text-xs text-primary font-semibold tracking-wide mb-3">{member.role}</p>
-                  <div className="flex items-start gap-2">
-                    <Quote className="w-3.5 h-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
-                    <p className="text-xs text-muted-foreground italic leading-relaxed">{member.quote}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+    {/* Team Grid */}
+    <motion.div {...stagger} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
+      {team.map((member, index) => (
+        <motion.div
+          key={member.name}
+          {...fadeUp(index * 0.1)}
+          className="group flex flex-col"
+        >
+          {/* Shorter Photo Container */}
+          <div className="relative h-72 mb-6 overflow-hidden rounded-2xl bg-muted transition-all duration-500 ring-1 ring-border group-hover:ring-primary/40">
+            <img
+              src={member.photo}
+              alt={member.name}
+              className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
+              loading="lazy"
+            />
+            {/* Subtle Overlay on Hover */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            {/* Initials Badge */}
+            
+          </div>
 
+          {/* Info Below Photo */}
+          <div className="space-y-2 px-1">
+            <h3 className="text-xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+              {member.name}
+            </h3>
+            <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/80">
+              {member.role}
+            </p>
+            
+            <div className="pt-4 mt-4 border-t border-border/50">
+              <div className="flex gap-3">
+                <Quote className="w-4 h-4 text-primary shrink-0 opacity-40" />
+                <p className="text-sm text-muted-foreground italic leading-snug">
+                  {member.quote}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </motion.div>
+  </div>
+</section>
       {/* ── TESTIMONIALS ─────────────────────── */}
       <section className="py-20">
         <div className="container mx-auto px-4 max-w-6xl">
