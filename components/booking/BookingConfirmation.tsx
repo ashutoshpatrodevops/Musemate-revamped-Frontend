@@ -35,6 +35,9 @@ interface BookingConfirmationProps {
 export function BookingConfirmation({ booking, qrCodeData }: BookingConfirmationProps) {
   const { getToken } = useAuth();
   const museum = typeof booking.museum === 'object' ? booking.museum : null;
+  const museumLocation = museum
+    ? [museum.city, museum.state, museum.country].filter(Boolean).join(', ') || museum.location
+    : '';
   const [downloadingTicket, setDownloadingTicket] = useState(false);
    if (!booking || !booking.contactInfo) {
     return (
@@ -182,9 +185,7 @@ export function BookingConfirmation({ booking, qrCodeData }: BookingConfirmation
                   <h3 className="font-semibold text-lg mb-1">{museum.title}</h3>
                   <div className="flex items-start gap-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <span>
-                      {museum.city}, {museum.state}, {museum.country}
-                    </span>
+                    <span>{museumLocation || 'Location not available'}</span>
                   </div>
                 </div>
               )}

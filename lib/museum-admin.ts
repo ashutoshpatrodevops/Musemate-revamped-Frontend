@@ -12,19 +12,17 @@ export interface BookingStatsResponse {
 }
 
 export interface MuseumBookingsResponse {
-  data: {
-    data: Booking[];
-    stats: Array<{
-      _id: string;
-      count: number;
-      totalRevenue: number;
-    }>;
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      pages: number;
-    };
+  data: Booking[];
+  stats: Array<{
+    _id: string;
+    count: number;
+    totalRevenue: number;
+  }>;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
   };
 }
 

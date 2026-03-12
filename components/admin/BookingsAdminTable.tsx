@@ -44,7 +44,9 @@ export function BookingsAdminTable() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const payload = await res.json();
-      setBookings(payload.data ?? payload);
+      // Extract array from response: { success, data: Booking[] } or { success, data: { data: Booking[] } }
+      const bookingsData = Array.isArray(payload.data) ? payload.data : (payload.data?.data || payload);
+      setBookings(Array.isArray(bookingsData) ? bookingsData : []);
     } catch (err) {
       console.error(err);
     } finally {

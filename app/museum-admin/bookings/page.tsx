@@ -100,7 +100,12 @@ export default function BookingsPage() {
       const results = await Promise.all(
         museumsData.map(m => museumAdminApi.getMuseumBookings(m._id, { page: 1, limit: 100 }, token))
       );
-      const all = results.flatMap(r => r.success && r.data ? r.data.data || [] : []);
+      const all = results.flatMap(r => {
+        if (!r.success || !r.data) return [];
+        // Handle both { data: Booking[] } and { data: { data: Booking[], stats, pagination } }
+        const bookings = Array.isArray(r.data) ? r.data : (r.data?.data || []);
+        return Array.isArray(bookings) ? bookings : [];
+      });
       setAllBookings(all); setFilteredBookings(all);
     } catch (err: any) {
       setError(err.message || 'Failed to load bookings');

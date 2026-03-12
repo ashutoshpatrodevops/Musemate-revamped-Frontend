@@ -41,7 +41,9 @@ export function ReviewsModerationTable() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const payload = await res.json();
-      setReviews(payload.data ?? payload);
+      // Extract array from response: { success, data: Review[] } or { success, data: { data: Review[] } }
+      const reviewsData = Array.isArray(payload.data) ? payload.data : (payload.data?.data || payload);
+      setReviews(Array.isArray(reviewsData) ? reviewsData : []);
     } catch (err) {
       console.error(err);
     } finally {

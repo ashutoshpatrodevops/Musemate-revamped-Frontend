@@ -35,7 +35,9 @@ export function UsersTable() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const payload = await res.json();
-      setUsers(payload.data ?? payload);
+      // Extract array from response: { success, data: User[] } or { success, data: { data: User[] } }
+      const usersData = Array.isArray(payload.data) ? payload.data : (payload.data?.data || payload);
+      setUsers(Array.isArray(usersData) ? usersData : []);
     } catch (err) {
       console.error(err);
     } finally {

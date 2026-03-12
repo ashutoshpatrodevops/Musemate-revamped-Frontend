@@ -129,12 +129,12 @@ const team = [
     quote: 'We grow only when our museum partners grow.',
   },
   {
-    name: 'Bengali Dada',
-    role: 'Tester',
-    photo: '/team/ghosh.jpeg',
+    name: 'Soumitra Ghosh',
+    role: 'ML & GenAI infrastructure LEad',
+    photo: '/team/soumitra2.jpeg',
     bg: 'bg-violet-950',
     initials: 'AI',
-    quote: 'I love to test others patience level',
+    quote: 'i code with vibe',
   },
 ];
 
@@ -387,19 +387,26 @@ export default function AboutPage() {
   <div className="container mx-auto px-4 max-w-6xl">
     {/* Header Section */}
     <motion.div {...fadeUp()} className="mb-20">
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-4 mb-7">
         <div className="h-px w-12 bg-primary/60" />
         <span className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground">
           The Core Team
         </span>
       </div>
-      <h2 className="text-4xl md:text-6xl font-black tracking-tight">
-        Building the future of <span className="text-primary italic">Culture.</span>
-      </h2>
+      <h2 className="text-4xl md:text-6xl font-black leading-[1.15] pb-1"
+  style={{
+    background: "linear-gradient(135deg, #f97316, #ec4899, #a855f7)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+  }}
+>
+  Building the future of <span className="italic">Culture.</span>
+</h2>
     </motion.div>
 
     {/* Team Grid */}
-    <motion.div {...stagger} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
+    <motion.div {...stagger} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-19">
       {team.map((member, index) => (
         <motion.div
           key={member.name}
@@ -411,7 +418,7 @@ export default function AboutPage() {
             <img
               src={member.photo}
               alt={member.name}
-              className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
+              className="h-full w-full object-cover  group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
               loading="lazy"
             />
             {/* Subtle Overlay on Hover */}

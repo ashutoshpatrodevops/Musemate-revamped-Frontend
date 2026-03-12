@@ -12,13 +12,13 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await currentUser();
-  const { sessionClaims, getToken } = await auth();
+  const { getToken } = await auth();
 
   if (!user) {
     redirect('/sign-in');
   }
 
-  const role = sessionClaims?.publicMetadata?.role;
+  const role = user.publicMetadata?.role as string | undefined;
   if (role === 'admin' || role === 'super_admin') {
     redirect('/admin/dashboard');
   }
