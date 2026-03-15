@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
       },
       {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+      },
+      {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
